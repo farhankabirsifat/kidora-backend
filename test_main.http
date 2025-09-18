@@ -1,0 +1,88 @@
+# Test your FastAPI endpoints
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/hello/User
+Accept: application/json
+
+###
+
+# Auth flow
+
+### Register
+POST http://127.0.0.1:8000/api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Admin",
+  "lastName": "User",
+  "email": "admin@example.com",
+  "phone": "0123456789",
+  "password": "secret"
+}
+
+### Send OTP (check your email for the code)
+POST http://127.0.0.1:8000/api/auth/send-otp
+Content-Type: application/json
+
+{
+  "email": "admin@example.com"
+}
+
+### Verify OTP -> returns access_token
+POST http://127.0.0.1:8000/api/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "otp": "000000"  # replace with the real code
+}
+
+### Set token variable (paste the access_token value from previous response)
+@token = PASTE_TOKEN_HERE
+
+### Create product (admin) with Authorization header
+POST http://127.0.0.1:8000/api/products/admin
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=---------------------------9051914041544843365972754266
+
+-----------------------------9051914041544843365972754266
+Content-Disposition: form-data; name="name"
+
+Test Product
+-----------------------------9051914041544843365972754266
+Content-Disposition: form-data; name="description"
+
+Test description
+-----------------------------9051914041544843365972754266
+Content-Disposition: form-data; name="price"
+
+99.99
+-----------------------------9051914041544843365972754266
+Content-Disposition: form-data; name="category"
+
+Electronics
+-----------------------------9051914041544843365972754266
+Content-Disposition: form-data; name="stock"
+
+5
+-----------------------------9051914041544843365972754266
+Content-Disposition: form-data; name="mainImage"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< ./media/sample.jpg
+-----------------------------9051914041544843365972754266
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< ./media/sample2.jpg
+-----------------------------9051914041544843365972754266--
+
+### Validate token (requires Authorization header)
+POST http://127.0.0.1:8000/api/auth/validate-token
+Authorization: Bearer {{token}}
+
+###
