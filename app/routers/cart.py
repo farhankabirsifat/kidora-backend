@@ -77,8 +77,9 @@ def add_or_update_cart_item(
         .first()
     )
 
-    # Determine target quantity (increment if exists)
-    new_qty = payload.quantity if not existing else (existing.quantity + payload.quantity)
+    # Determine target quantity: treat payload.quantity as ABSOLUTE desired quantity
+    # This avoids double-incrementing when frontend already computed the new quantity.
+    new_qty = payload.quantity
 
     # Validate against available stock (per-size when provided, else total)
     if size_key and product.sizes_stock:
@@ -106,7 +107,7 @@ def add_or_update_cart_item(
             )
         db.commit()
     except IntegrityError:
-        # In case of a race, merge by incrementing
+        # In case of a race, perform an upsert-like set to the absolute quantity
         db.rollback()
         existing = (
             db.query(CartItem)
@@ -118,27 +119,26 @@ def add_or_update_cart_item(
             .first()
         )
         if existing:
-            # Recompute and validate again just in case
-            merged_qty = existing.quantity + payload.quantity
+            # Validate absolute quantity again
             if size_key and product.sizes_stock:
                 available = int((product.sizes_stock or {}).get(size_key, 0) or 0)
-                if merged_qty > available:
+                if new_qty > available:
                     raise HTTPException(status_code=400, detail=f"Not enough stock for size {size_key}. Available: {available}")
             else:
                 available_total = int(product.stock or 0)
-                if merged_qty > available_total:
+                if new_qty > available_total:
                     raise HTTPException(status_code=400, detail=f"Not enough stock. Available: {available_total}")
-            existing.quantity = merged_qty
+            existing.quantity = new_qty
             existing.updated_at = datetime.utcnow()
             db.commit()
         else:
-            # Try fresh insert one more time
+            # Try fresh insert one more time using absolute quantity
             db.add(
                 CartItem(
                     cart_id=cart.id,
                     product_id=payload.productId,
                     selected_size=size_key,
-                    quantity=payload.quantity,
+                    quantity=new_qty,
                 )
             )
             db.commit()
@@ -160,12 +160,18 @@ def remove_cart_item(
         raise HTTPException(status_code=401, detail="Invalid user")
     cart = _get_or_create_cart(db, user.id)
 
+    # Normalize size to match stored format
+    norm_size = (selectedSize or None)
+    if norm_size is not None:
+        s = str(norm_size).strip()
+        norm_size = s.upper() if s else None
+
     item = (
         db.query(CartItem)
         .filter(
             CartItem.cart_id == cart.id,
             CartItem.product_id == productId,
-            CartItem.selected_size == selectedSize,
+            CartItem.selected_size == norm_size,
         )
         .first()
     )
