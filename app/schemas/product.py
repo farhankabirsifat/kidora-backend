@@ -10,6 +10,7 @@ class ProductBase(BaseModel):
     rating: Optional[float] = 0.0
     discount: Optional[int] = 0
     sizes_stock: Optional[dict] = None
+    video: Optional[str] = None
 
 class ProductCreate(ProductBase):
     pass

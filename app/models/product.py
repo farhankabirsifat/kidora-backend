@@ -14,6 +14,8 @@ class Product(Base):
     rating = Column(Float, default=0.0)
     discount = Column(Integer, default=0)
     main_image = Column(String(255))
+    # Optional embedded video URL (e.g., YouTube embed)
+    video_url = Column(String(500))
     images = Column(JSONB)  # List of URLs or paths
     sizes_stock = Column(JSONB)  # Optional per-size inventory, e.g., {"XS": 3, "S": 5, ...}
 

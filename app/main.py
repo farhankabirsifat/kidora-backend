@@ -172,6 +172,14 @@ def on_startup():
             except Exception:
                 pass
 
+            # Ensure video_url column exists on products
+            try:
+                conn.execute(text(
+                    "ALTER TABLE IF EXISTS products ADD COLUMN IF NOT EXISTS video_url VARCHAR(500)"
+                ))
+            except Exception:
+                pass
+
             # Ensure orders.status and orders.payment_status check constraints allow our canonical set
             # Normalize any existing lowercase/mismatched values before re-adding constraints
             try:
