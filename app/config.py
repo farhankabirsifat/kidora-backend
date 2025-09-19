@@ -26,6 +26,8 @@ class Settings:
     SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.gmail.com")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
     EMAIL_BACKEND: str = os.getenv("EMAIL_BACKEND", "console").lower()
+    # Feature flag for sending notification emails
+    ENABLE_EMAIL_NOTIFICATIONS: bool = bool(int(os.getenv("ENABLE_EMAIL_NOTIFICATIONS", "1")))
 
 
 @lru_cache

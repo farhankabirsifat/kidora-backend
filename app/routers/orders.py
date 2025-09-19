@@ -15,7 +15,9 @@ from app.schemas.order import (
     OrderStatusUpdate,
     OrderPaymentStatusUpdate,
 )
-from app.utils.security import get_current_user
+from app.utils.security import get_current_user, send_email
+from app.config import get_settings
+from app.utils.email_templates import order_confirmation, order_status_update, payment_status_update
 from app.models.user import engine
 
 
@@ -182,6 +184,15 @@ def create_order(
 
     db.commit()
     db.refresh(order)
+    # Send confirmation email
+    try:
+        settings = get_settings()
+        if getattr(settings, 'ENABLE_EMAIL_NOTIFICATIONS', True):
+            item_count = len(order.items)
+            tpl = order_confirmation(order.id, order.total_amount or 0.0, item_count)
+            send_email(user.email, tpl['subject'], tpl['body'])
+    except Exception:
+        pass
     return map_order_to_out(order)
 
 
@@ -354,6 +365,17 @@ def admin_update_order_status(
             pass
         db.commit()
     db.refresh(order)
+    # Email status update
+    try:
+        settings = get_settings()
+        if getattr(settings, 'ENABLE_EMAIL_NOTIFICATIONS', True):
+            tpl = order_status_update(order.id, order.status)
+            # look up user email
+            u = db.query(User).filter(User.id == order.user_id).first()
+            if u and u.email:
+                send_email(u.email, tpl['subject'], tpl['body'])
+    except Exception:
+        pass
     return map_order_to_out(order)
 
 
@@ -392,4 +414,14 @@ def admin_update_payment_status(
             pass
         db.commit()
     db.refresh(order)
+    # Email payment status update
+    try:
+        settings = get_settings()
+        if getattr(settings, 'ENABLE_EMAIL_NOTIFICATIONS', True):
+            tpl = payment_status_update(order.id, order.payment_status)
+            u = db.query(User).filter(User.id == order.user_id).first()
+            if u and u.email:
+                send_email(u.email, tpl['subject'], tpl['body'])
+    except Exception:
+        pass
     return map_order_to_out(order)
