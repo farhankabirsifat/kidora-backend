@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Numeric
+from sqlalchemy import Column, Integer, String, Float, Numeric, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from app.models.user import Base
@@ -18,4 +18,5 @@ class Product(Base):
     video_url = Column(String(500))
     images = Column(JSONB)  # List of URLs or paths
     sizes_stock = Column(JSONB)  # Optional per-size inventory, e.g., {"XS": 3, "S": 5, ...}
+    free_shipping = Column(Boolean, default=False)
 

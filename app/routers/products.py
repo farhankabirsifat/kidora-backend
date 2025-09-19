@@ -64,6 +64,7 @@ def to_product_out(p: Product) -> ProductOut:
         video=_normalize_video_embed(p.video_url),
         images=parse_images(p.images),
         sizes_stock=p.sizes_stock or None,
+        free_shipping=bool(getattr(p, 'free_shipping', False)),
     )
 
 # 6. Get All Products (with filters)
@@ -140,6 +141,7 @@ def create_product(
     images: List[UploadFile] = File([]),
     sizes_stock: str = Form(None, description="JSON string mapping size -> quantity"),
     video: str = Form(None, description="Embedded video URL e.g. https://www.youtube.com/embed/..."),
+    free_shipping: bool = Form(False),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user)
 ):
@@ -175,6 +177,7 @@ def create_product(
         video_url=_normalize_video_embed(video),
         images=image_urls,
         sizes_stock=sizes_map,
+        free_shipping=free_shipping,
     )
     db.add(product)
     db.commit()
@@ -199,6 +202,7 @@ def update_product(
     image_urls: List[str] = Form([]),
     sizes_stock: str = Form(None, description="JSON string mapping size -> quantity"),
     video: str = Form(None, description="Embedded video URL e.g. https://www.youtube.com/embed/..."),
+    free_shipping: bool = Form(False),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user)
 ):
@@ -214,6 +218,7 @@ def update_product(
     product.stock = stock
     product.rating = rating
     product.discount = discount
+    product.free_shipping = free_shipping
     # Video URL
     if video is not None:
         product.video_url = _normalize_video_embed(video) or None

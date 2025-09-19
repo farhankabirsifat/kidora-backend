@@ -180,6 +180,14 @@ def on_startup():
             except Exception:
                 pass
 
+            # Ensure free_shipping column exists on products (boolean default false)
+            try:
+                conn.execute(text(
+                    "ALTER TABLE IF EXISTS products ADD COLUMN IF NOT EXISTS free_shipping BOOLEAN DEFAULT FALSE"
+                ))
+            except Exception:
+                pass
+
             # Ensure orders.status and orders.payment_status check constraints allow our canonical set
             # Normalize any existing lowercase/mismatched values before re-adding constraints
             try:

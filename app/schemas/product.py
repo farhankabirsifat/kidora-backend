@@ -11,6 +11,7 @@ class ProductBase(BaseModel):
     discount: Optional[int] = 0
     sizes_stock: Optional[dict] = None
     video: Optional[str] = None
+    free_shipping: bool = False
 
 class ProductCreate(ProductBase):
     pass
