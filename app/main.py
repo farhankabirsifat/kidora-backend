@@ -30,6 +30,7 @@ def on_startup():
     import app.models.address  # register Address model
     import app.models.hero_banner  # register HeroBanner model
     import app.models.return_request  # register ReturnRequest model
+    import app.models.payment_config  # register PaymentConfig model
     Base.metadata.create_all(bind=engine)
 
     # Lightweight, idempotent migrations for schema drift across environments
@@ -266,3 +267,5 @@ app.include_router(hero_banners.router, prefix="/api/hero-banners", tags=["hero-
 app.include_router(user_router.router, prefix="/api/user", tags=["user"])
 app.include_router(admin_dashboard.router, prefix="/api/admin", tags=["admin-dashboard"])
 app.include_router(admin_returns.router, prefix="/api/admin/returns", tags=["admin-returns"])
+from app.routers import admin_payment_config
+app.include_router(admin_payment_config.router, prefix="/api", tags=["payment-config"])
