@@ -307,6 +307,25 @@ def get_admin_orders(
     return [map_order_to_out(o) for o in orders]
 
 
+@admin_router.get("/by-user/{user_id}", response_model=List[OrderOut])
+def get_admin_orders_by_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user),
+):
+    """List all orders for a given user (admin only)."""
+    is_admin = current_user_email.endswith("@admin") or current_user_email == "admin@example.com"
+    if not is_admin:
+        from app.utils.security import ADMIN_EMAIL
+        if current_user_email != ADMIN_EMAIL:
+            raise HTTPException(status_code=403, detail="Admin access required")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    orders = db.query(Order).filter(Order.user_id == user.id).order_by(Order.created_at.desc()).all()
+    return [map_order_to_out(o) for o in orders]
+
+
 # 20. Admin: Update Order Status
 @admin_router.put("/{id}/status", response_model=OrderOut)
 def admin_update_order_status(
