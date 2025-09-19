@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.models.user import User, get_db
-from app.utils.security import get_current_user, ADMIN_EMAIL
+from app.utils.security import get_current_user, is_admin_email
 
 
 router = APIRouter()
 
 
 def _is_admin(email: str) -> bool:
-    return email == ADMIN_EMAIL or email.endswith("@admin") or email == "admin@example.com"
+    return is_admin_email(email)
 
 
 @router.get("/", response_model=List[dict])

@@ -14,6 +14,9 @@ try:
     from app.config import get_settings
     settings = get_settings()
     ADMIN_EMAIL = settings.ADMIN_EMAIL
+    # Build a canonical set of admin emails (lowercased) from primary + optional list
+    _additional = getattr(settings, "ADMIN_EMAILS", "") or ""
+    ADMIN_EMAIL_SET = {e.strip().lower() for e in (_additional.split(",") + [ADMIN_EMAIL]) if e.strip()}
     ADMIN_EMAIL_PASSWORD = settings.ADMIN_EMAIL_PASSWORD
     SMTP_SERVER = settings.SMTP_SERVER
     SMTP_PORT = settings.SMTP_PORT
@@ -25,7 +28,8 @@ except Exception:
     # WARNING: Fallback minimal defaults if config import fails early.
     # These defaults are insecure and should NEVER be used in production!
     # JWT settings removed in basic auth mode
-    ADMIN_EMAIL = "admin@example.com"
+    ADMIN_EMAIL = "kidorabd@gmail.com"
+    ADMIN_EMAIL_SET = {ADMIN_EMAIL}
     import os
     ADMIN_EMAIL_PASSWORD = os.environ.get("ADMIN_EMAIL_PASSWORD", "")
     SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
@@ -142,8 +146,25 @@ def send_email(to_email: str, subject: str, body: str):
 
 
 def is_admin_email(email: str) -> bool:
+    """Return True if email belongs to an admin.
+
+    Simplified rule: Email (case-insensitive) must be present in ADMIN_EMAIL_SET.
+    All legacy fallbacks (domain '@admin' or 'admin@example.com') have been removed
+    per security tightening request so that only explicitly configured addresses
+    have elevated privileges.
+    """
     if not email:
         return False
-    if email == ADMIN_EMAIL or email.endswith("@admin") or email == "admin@example.com":
-        return True
-    return False
+    e = email.strip().lower()
+    return e in ADMIN_EMAIL_SET
+
+
+def get_current_admin_user(credentials: HTTPBasicCredentials = Depends(http_basic)) -> str:
+    """Authenticate via HTTP Basic and enforce admin email membership.
+
+    Raises 401 if credentials invalid, 403 if not an admin.
+    """
+    email = get_current_user(credentials)  # returns email or raises 401
+    if not is_admin_email(email):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return email

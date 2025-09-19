@@ -4,22 +4,20 @@ from sqlalchemy.orm import Session
 from app.models.user import get_db, User
 from app.models.product import Product
 from app.models.order import Order
-from app.utils.security import get_current_user, ADMIN_EMAIL
+from app.utils.security import get_current_admin_user
 
 
 router = APIRouter()
 
 
 def _is_admin_or_sub(email: str) -> bool:
-    # Accept ADMIN_EMAIL, admin@example.com, or emails ending with @admin as admins
-    return email == ADMIN_EMAIL or email.endswith("@admin") or email == "admin@example.com"
+    # Backwards compatibility wrapper (unused after dependency swap)
+    return True
 
 
 # 40. Get Dashboard Overview
 @router.get("/dashboard/overview")
-def get_dashboard_overview(db: Session = Depends(get_db), current_user_email: str = Depends(get_current_user)):
-    if not _is_admin_or_sub(current_user_email):
-        raise HTTPException(status_code=403, detail="Admin access required")
+def get_dashboard_overview(db: Session = Depends(get_db), current_user_email: str = Depends(get_current_admin_user)):
     users = db.query(User).count()
     products = db.query(Product).count()
     orders = db.query(Order).count()
@@ -30,9 +28,7 @@ def get_dashboard_overview(db: Session = Depends(get_db), current_user_email: st
 
 # 41. Update Admin Order Status
 @router.put("/orders/{id}/status")
-def update_admin_order_status(id: int, payload: dict, db: Session = Depends(get_db), current_user_email: str = Depends(get_current_user)):
-    if not _is_admin_or_sub(current_user_email):
-        raise HTTPException(status_code=403, detail="Admin access required")
+def update_admin_order_status(id: int, payload: dict, db: Session = Depends(get_db), current_user_email: str = Depends(get_current_admin_user)):
     order = db.query(Order).filter(Order.id == id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -46,9 +42,7 @@ def update_admin_order_status(id: int, payload: dict, db: Session = Depends(get_
 
 # 42. Update Admin Payment Status
 @router.put("/orders/{id}/payment-status")
-def update_admin_payment_status(id: int, payload: dict, db: Session = Depends(get_db), current_user_email: str = Depends(get_current_user)):
-    if not _is_admin_or_sub(current_user_email):
-        raise HTTPException(status_code=403, detail="Admin access required")
+def update_admin_payment_status(id: int, payload: dict, db: Session = Depends(get_db), current_user_email: str = Depends(get_current_admin_user)):
     order = db.query(Order).filter(Order.id == id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")

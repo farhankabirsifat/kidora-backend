@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.models.user import get_db
 from app.models.return_request import ReturnRequest
-from app.utils.security import get_current_user, ADMIN_EMAIL
+from app.utils.security import get_current_user, is_admin_email
 
 
 router = APIRouter()
 
 
 def _is_admin_or_sub(email: str) -> bool:
-    return email == ADMIN_EMAIL or email.endswith("@admin") or email == "admin@example.com"
+    return is_admin_email(email)
 
 
 # 43. Get Return Requests (Admin)

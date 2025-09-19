@@ -40,7 +40,7 @@ def _normalize_video_embed(url: Optional[str]) -> Optional[str]:
 from sqlalchemy import func, or_
 from app.models.user import get_db
 from app.schemas.product import ProductOut
-from app.utils.security import get_current_user, ADMIN_EMAIL
+from app.utils.security import get_current_user, is_admin_email
 from app.utils.storage import save_upload_file, save_multiple_upload_files, save_from_path_or_url, save_multiple_from_paths_or_urls
 
 router = APIRouter()
@@ -307,7 +307,7 @@ def upload_file(
     file: UploadFile = File(...),
     current_user: str = Depends(get_current_user),
 ):
-    if current_user != ADMIN_EMAIL:
+    if not is_admin_email(current_user):
         raise HTTPException(status_code=403, detail="Admin access required")
     url = save_upload_file(file, subdir="products")
     return {"url": url}

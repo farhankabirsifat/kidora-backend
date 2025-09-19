@@ -18,7 +18,10 @@ class Settings:
     # Default to 7 days so users stay logged in for a week
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", str(7 * 24 * 60)))
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:1234@localhost:5432/kidora")
-    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@example.com")
+    # Primary legacy single admin email (kept for backward compatibility)
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "kidorabd@gmail.com")
+    # Optional comma separated list of additional admin emails (including primary if desired)
+    ADMIN_EMAILS: str = os.getenv("ADMIN_EMAILS", "")
     ADMIN_EMAIL_PASSWORD: str = os.getenv("ADMIN_EMAIL_PASSWORD", "")
     SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.gmail.com")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))

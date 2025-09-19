@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.models.user import get_db
 from app.models.hero_banner import HeroBanner
 from app.schemas.hero_banner import HeroBannerOut
-from app.utils.security import get_current_user, ADMIN_EMAIL
+from app.utils.security import get_current_user, is_admin_email
 from app.utils.storage import save_upload_file, save_from_path_or_url
 
 
@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 def _is_admin(email: str) -> bool:
-    return email == ADMIN_EMAIL or email.endswith("@admin") or email == "admin@example.com"
+    return is_admin_email(email)
 
 
 def _to_out(b: HeroBanner) -> HeroBannerOut:
