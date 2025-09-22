@@ -6,7 +6,7 @@ from app.models.user import get_db
 from app.models.hero_banner import HeroBanner
 from app.schemas.hero_banner import HeroBannerOut
 from app.utils.security import get_current_user, is_admin_email
-from app.utils.storage import save_upload_file, save_from_path_or_url
+from app.utils.storage import save_upload_file, save_from_path_or_url, delete_media_file
 
 
 router = APIRouter()
@@ -93,6 +93,12 @@ def delete_hero_banner(id: int, db: Session = Depends(get_db), current_user_emai
     banner = db.query(HeroBanner).filter(HeroBanner.id == id).first()
     if not banner:
         raise HTTPException(status_code=404, detail="Banner not found")
+    # Attempt to remove associated image file if stored locally
+    try:
+        if banner.image_url:
+            delete_media_file(banner.image_url)
+    except Exception:
+        pass
     db.delete(banner)
     db.commit()
     return {"message": "Banner deleted"}

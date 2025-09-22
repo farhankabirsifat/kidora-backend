@@ -41,7 +41,14 @@ from sqlalchemy import func, or_
 from app.models.user import get_db
 from app.schemas.product import ProductOut
 from app.utils.security import get_current_user, is_admin_email
-from app.utils.storage import save_upload_file, save_multiple_upload_files, save_from_path_or_url, save_multiple_from_paths_or_urls
+from app.utils.storage import (
+    save_upload_file,
+    save_multiple_upload_files,
+    save_from_path_or_url,
+    save_multiple_from_paths_or_urls,
+    delete_media_file,
+    delete_media_files,
+)
 
 router = APIRouter()
 
@@ -261,6 +268,15 @@ def delete_product(id: int, db: Session = Depends(get_db), current_user: str = D
     product = db.query(Product).filter(Product.id == id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    # Attempt file cleanup before deleting DB row
+    try:
+        if product.main_image:
+            delete_media_file(product.main_image)
+        if product.images and isinstance(product.images, list):
+            delete_media_files(product.images)
+    except Exception:
+        # Silently ignore file deletion issues to avoid blocking core delete
+        pass
     db.delete(product)
     db.commit()
     return {"message": "Product deleted"}

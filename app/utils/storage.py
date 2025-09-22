@@ -88,3 +88,40 @@ def save_from_path_or_url(src: str, subdir: str = "products") -> str:
 
 def save_multiple_from_paths_or_urls(sources: List[str], subdir: str = "products") -> List[str]:
     return [save_from_path_or_url(s, subdir=subdir) for s in (sources or []) if s]
+
+
+def delete_media_file(rel_url: Optional[str]) -> bool:
+    """Delete a single media file by its stored relative URL (e.g. /media/products/<file>). Returns True if removed.
+
+    Safety rules:
+    - Only operates inside MEDIA_ROOT
+    - Ignores None/empty or non /media/ prefixed inputs
+    - Silently ignores if file missing
+    """
+    if not rel_url or not isinstance(rel_url, str):
+        return False
+    if not rel_url.startswith('/media/'):
+        return False
+    try:
+        # rel_url: /media/<subdir>/<filename>
+        parts = rel_url.strip('/').split('/')  # [media, subdir, filename]
+        if len(parts) < 3:
+            return False
+        target_path = MEDIA_ROOT / '/'.join(parts[1:])  # skip leading 'media'
+        if target_path.is_file():
+            target_path.unlink()
+            return True
+    except Exception:
+        return False
+    return False
+
+
+def delete_media_files(urls: Optional[List[str]]) -> int:
+    """Delete multiple media files; returns count of successfully removed files."""
+    if not urls:
+        return 0
+    removed = 0
+    for u in urls:
+        if delete_media_file(u):
+            removed += 1
+    return removed
