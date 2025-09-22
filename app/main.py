@@ -241,20 +241,7 @@ app.mount("/media", StaticFiles(directory=str(MEDIA_ROOT)), name="media")
 # CORS configuration for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Vite default
-        "http://127.0.0.1:5173",
-        "http://localhost:4173",  # Vite preview
-        "http://127.0.0.1:4173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        # Production domains
-        "https://kidora.com.bd",
-        "https://www.kidora.com.bd",
-        # (Optional) include http variants if server redirects http->https and you still receive preflight before redirect
-        "http://kidora.com.bd",
-        "http://www.kidora.com.bd",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
