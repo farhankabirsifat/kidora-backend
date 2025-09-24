@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.models.user import User, get_db, OTP
 from app.schemas.user import RegisterSchema, LoginSchema
-from app.utils.security import create_access_token, get_current_user_email, blacklist_token, send_email
+from app.utils.security import create_access_token, get_current_user_email, blacklist_token
 from app.config import get_settings
-from app.utils.email_templates import welcome_email, password_reset_code, password_reset_success
+# Email templates removed (email sending disabled)
 from datetime import datetime, timedelta
 import random
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -27,13 +27,7 @@ def register(user: RegisterSchema, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    settings = get_settings()
-    if getattr(settings, 'ENABLE_EMAIL_NOTIFICATIONS', True):
-        try:
-            tpl = welcome_email(new_user.first_name)
-            send_email(new_user.email, tpl['subject'], tpl['body'])
-        except Exception:
-            pass
+    # Email disabled: skip welcome email
     return {"message": "User registered successfully"}
 
 @router.post("/login")
@@ -62,14 +56,7 @@ def forgot_password(payload: dict, db: Session = Depends(get_db)):
         db.query(OTP).filter(OTP.email == email, OTP.used == False).update({OTP.used: True})  # type: ignore
         db.add(OTP(email=email, code=code, expires_at=expires_at))
         db.commit()
-        # Send email
-        try:
-            settings = get_settings()
-            if getattr(settings, 'ENABLE_EMAIL_NOTIFICATIONS', True):
-                tpl = password_reset_code(code)
-                send_email(email, tpl['subject'], tpl['body'])
-        except Exception:
-            pass
+        # Email disabled: skip sending OTP via email
     return {"message": "If that email exists, a reset code was sent"}
 
 
@@ -95,14 +82,7 @@ def reset_password(payload: dict, db: Session = Depends(get_db)):
     otp.used = True
     user.password = new_password  # NOTE: hash in production
     db.commit()
-    # Send confirmation
-    try:
-        settings = get_settings()
-        if getattr(settings, 'ENABLE_EMAIL_NOTIFICATIONS', True):
-            tpl = password_reset_success()
-            send_email(email, tpl['subject'], tpl['body'])
-    except Exception:
-        pass
+    # Email disabled: skip confirmation email
     return {"message": "Password reset successful"}
 
 

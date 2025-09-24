@@ -21,7 +21,6 @@ try:
     SMTP_SERVER = settings.SMTP_SERVER
     SMTP_PORT = settings.SMTP_PORT
     EMAIL_BACKEND = getattr(settings, "EMAIL_BACKEND", "console")
-    ENABLE_EMAIL_NOTIFICATIONS = getattr(settings, "ENABLE_EMAIL_NOTIFICATIONS", True) #--> Email on/off flag
     SECRET_KEY = settings.SECRET_KEY
     ALGORITHM = settings.ALGORITHM
     ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -37,7 +36,6 @@ except Exception:
     SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
     EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "console")
     EMAIL_BACKEND = "console"
-    ENABLE_EMAIL_NOTIFICATIONS = bool(int(os.environ.get("ENABLE_EMAIL_NOTIFICATIONS", "1")))  #--> Email on/off flag
     SECRET_KEY = os.environ.get("SECRET_KEY", "change_me_secret")
     ALGORITHM = os.environ.get("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", str(7 * 24 * 60)))
@@ -104,52 +102,18 @@ def get_current_user_email(token: HTTPAuthorizationCredentials = Depends(http_be
 
 
 def _send_email_console(to_email: str, subject: str, body: str):
-    # Development helper: logs the email content instead of sending
-    logger.info("[EMAIL:console] To=%s Subject=%s Body=%s", to_email, subject, body)
+    # Emailing disabled: keep as debug log for traceability
+    logger.info("[EMAIL:disabled] To=%s Subject=%s Body=%s", to_email, subject, body)
 
 
 def send_email(to_email: str, subject: str, body: str):
-    """Send an email using configured backend.
+    """Email sending removed: this is a no-op.
 
-    In development (EMAIL_BACKEND=console), the email is logged instead of sent.
-    In SMTP mode, errors are logged and won't raise to callers to avoid 500s.
+    We keep the function to avoid refactoring all call sites. It logs at info
+    level with a disabled tag and returns True to preserve existing flows.
     """
-    # Global feature flag: allow turning off all actual email sends without code removal  #--> Email on/off flag
-    if not ENABLE_EMAIL_NOTIFICATIONS:
-        logger.info("Email notifications disabled. Skipping send to %s (subject=%s)", to_email, subject)
-        _send_email_console(to_email, subject, body)
-        return True  #--> Email on/off flag
-    backend = (EMAIL_BACKEND or "console").lower()
-
-    # Console backend or missing credentials: log and return
-    if backend != "smtp" or not ADMIN_EMAIL or not ADMIN_EMAIL_PASSWORD:
-        if backend == "smtp" and (not ADMIN_EMAIL or not ADMIN_EMAIL_PASSWORD):
-            logger.warning(
-                "EMAIL_BACKEND=smtp but credentials missing (ADMIN_EMAIL set=%s, password length=%s). Falling back to console.",
-                bool(ADMIN_EMAIL), len(ADMIN_EMAIL_PASSWORD or "")
-            )
-        logger.debug("Email backend in use: console (to=%s subject=%s)", to_email, subject)
-        _send_email_console(to_email, subject, body)
-        return True
-
-    try:
-        msg = MIMEText(body)
-        msg["Subject"] = subject
-        msg["From"] = ADMIN_EMAIL
-        msg["To"] = to_email
-
-        logger.debug("Attempting SMTP connection to %s:%s backend=%s", SMTP_SERVER, SMTP_PORT, backend)
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=20) as server:
-            server.starttls()
-            server.login(ADMIN_EMAIL, ADMIN_EMAIL_PASSWORD)
-            server.send_message(msg)
-        logger.info("Email sent via SMTP to %s", to_email)
-        return True
-    except Exception as e:
-        # Do not break API flow on email failure
-        logger.error("Failed to send email via SMTP: %s", e, exc_info=True)
-        _send_email_console(to_email, subject, body)
-        return False
+    _send_email_console(to_email, subject, body)
+    return True
 
 
 def is_admin_email(email: str) -> bool:

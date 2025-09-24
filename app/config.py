@@ -27,7 +27,8 @@ class Settings:
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
     EMAIL_BACKEND: str = os.getenv("EMAIL_BACKEND", "console").lower()
     # Feature flag for sending notification emails
-    ENABLE_EMAIL_NOTIFICATIONS: bool = bool(int(os.getenv("ENABLE_EMAIL_NOTIFICATIONS", "1")))
+    # Default disabled as SMTP/email has been removed by request.
+    ENABLE_EMAIL_NOTIFICATIONS: bool = bool(int(os.getenv("ENABLE_EMAIL_NOTIFICATIONS", "0")))
 
 
 @lru_cache
