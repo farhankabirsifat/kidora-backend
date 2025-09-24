@@ -262,3 +262,10 @@ app.include_router(admin_dashboard.router, prefix="/api/admin", tags=["admin-das
 app.include_router(admin_returns.router, prefix="/api/admin/returns", tags=["admin-returns"])
 from app.routers import admin_payment_config
 app.include_router(admin_payment_config.router, prefix="/api", tags=["payment-config"])
+
+
+# --- Entry point for Railway / local ---
+if __name__ == "__main__":
+    import uvicorn, os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
