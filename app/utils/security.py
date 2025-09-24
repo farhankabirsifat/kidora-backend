@@ -21,6 +21,7 @@ try:
     SMTP_SERVER = settings.SMTP_SERVER
     SMTP_PORT = settings.SMTP_PORT
     EMAIL_BACKEND = getattr(settings, "EMAIL_BACKEND", "console")
+    ENABLE_EMAIL_NOTIFICATIONS = getattr(settings, "ENABLE_EMAIL_NOTIFICATIONS", True) #--> Email on/off flag
     SECRET_KEY = settings.SECRET_KEY
     ALGORITHM = settings.ALGORITHM
     ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -36,6 +37,7 @@ except Exception:
     SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
     EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "console")
     EMAIL_BACKEND = "console"
+    ENABLE_EMAIL_NOTIFICATIONS = bool(int(os.environ.get("ENABLE_EMAIL_NOTIFICATIONS", "1")))  #--> Email on/off flag
     SECRET_KEY = os.environ.get("SECRET_KEY", "change_me_secret")
     ALGORITHM = os.environ.get("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", str(7 * 24 * 60)))
@@ -112,6 +114,11 @@ def send_email(to_email: str, subject: str, body: str):
     In development (EMAIL_BACKEND=console), the email is logged instead of sent.
     In SMTP mode, errors are logged and won't raise to callers to avoid 500s.
     """
+    # Global feature flag: allow turning off all actual email sends without code removal  #--> Email on/off flag
+    if not ENABLE_EMAIL_NOTIFICATIONS:
+        logger.info("Email notifications disabled. Skipping send to %s (subject=%s)", to_email, subject)
+        _send_email_console(to_email, subject, body)
+        return True  #--> Email on/off flag
     backend = (EMAIL_BACKEND or "console").lower()
 
     # Console backend or missing credentials: log and return
